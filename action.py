@@ -1,18 +1,14 @@
-# Server Action di Odoo Studio (Model: account.move)
-BASE_BACKEND_URL = "https://backend-anda.com"
-API_SECRET = "your_super_secret_hmac_key_here"
+# Server Action di Odoo 19 Online (Model: account.move / Journal Entry)
+# Versi 100% kompatibel dengan Python safe_eval Odoo Online (Tanpa import library)
 
-import hmac
-import hashlib
+BASE_BACKEND_URL = "https://odoo-coretax-xml.vercel.app"
+API_SECRET = "secret_coretax_hanifa_2026"
 
-# Generate HMAC Token untuk mencegah IDOR
-message = f"invoice:{record.id}".encode('utf-8')
-token = hmac.new(API_SECRET.encode('utf-8'), message, hashlib.sha256).hexdigest()
-
-download_url = f"{BASE_BACKEND_URL}/api/invoices/{record.id}/xml?token={token}"
+# Buat URL download dengan token autentikasi
+download_url = f"{BASE_BACKEND_URL}/api/invoices/{record.id}/xml?token={API_SECRET}"
 
 action = {
     'type': 'ir.actions.act_url',
     'url': download_url,
-    'target': 'self', # Mengunduh langsung di browser
+    'target': 'self',  # Langsung memicu unduhan file di browser pengguna
 }

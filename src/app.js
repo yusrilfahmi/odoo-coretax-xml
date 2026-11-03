@@ -25,6 +25,17 @@ export function createApp(customRepository = null) {
   const exportService = new InvoiceExportService(odooRepository, taxEngine);
   const exportController = new InvoiceExportController(exportService);
 
+  // Root endpoint untuk health & landing info
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'OK',
+      service: 'Odoo 19 Coretax XML Exporter',
+      timestamp: new Date().toISOString(),
+      strategy: appConfig.taxCalculationStrategy,
+      odooConfigured: Boolean(odooConfig.baseUrl && odooConfig.apiKey)
+    });
+  });
+
   // Health-check endpoint
   app.get('/health', (req, res) => {
     res.json({
