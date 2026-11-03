@@ -58,15 +58,15 @@ describe('1. Tax Calculation Engine & Decimal Precision', () => {
   const taxEngine = new TaxCalculationEngine();
 
   it('Harus menghitung rumus Coretax Official secara akurat (sesuai template XML)', () => {
-    // 15,000 * 200 = 3,000,000; Diskon 100,000 => TaxBase = 2,900,000; VAT 11% => 319,000
+    // 15,000 * 200 = 3,000,000; Diskon 100,000 => TaxBase = 2,900,000; OtherTaxBase = 11/12 * 2,900,000 = 2,658,333.33; VAT 12% => 319,000
     const line = { price_unit: 15000, quantity: 200, discount_amount: 100000, stlg_rate: 20 };
-    const res = taxEngine.calculateLine(line, { strategy: 'CORETAX_OFFICIAL', vatRate: 11 });
+    const res = taxEngine.calculateLine(line, { strategy: 'CORETAX_OFFICIAL', vatRate: 12 });
 
     assert.strictEqual(res.price, 15000);
     assert.strictEqual(res.qty, 200);
     assert.strictEqual(res.totalDiscount, 100000);
     assert.strictEqual(res.taxBase, 2900000);
-    assert.strictEqual(res.otherTaxBase, 2900000);
+    assert.strictEqual(res.otherTaxBase, 2658333.33);
     assert.strictEqual(res.vat, 319000);
     assert.strictEqual(res.stlg, 580000); // 2,900,000 * 20%
   });
@@ -180,12 +180,12 @@ describe('4. 17 Skenario Uji Persyaratan Sistem (End-to-End Service Tests)', () 
       13: { id: 13, name: '', vat: '123' } // Nama kosong
     },
     lines: {
-      101: { id: 101, name: 'Produk A', price_unit: 10000, quantity: 2, discount: 0 },
-      102: { id: 102, name: 'Produk B dengan Diskon', price_unit: 50000, quantity: 4, discount: 10 },
-      103: { id: 103, name: 'Produk C', price_unit: 25000, quantity: 1, discount: 0 },
+      101: { id: 101, name: 'Produk A', price_unit: 10000, quantity: 2, discount: 0, product_uom_id: [1, 'Pcs'] },
+      102: { id: 102, name: 'Produk B dengan Diskon', price_unit: 50000, quantity: 4, discount: 10, product_uom_id: [2, 'Box'] },
+      103: { id: 103, name: 'Produk C', price_unit: 25000, quantity: 1, discount: 0, product_uom_id: [3, 'kg'] },
       104: { id: 104, name: 'Harga Desimal', price_unit: 1234.56, quantity: 10, discount: 0 },
       105: { id: 105, name: 'Quantity Desimal', price_unit: 10000, quantity: 2.5, discount: 0 },
-      106: { id: 106, name: 'Jasa Konsultasi <Special & Char>', price_unit: 100000, quantity: 1, discount: 0 }
+      106: { id: 106, name: 'Jasa Konsultasi <Special & Char>', price_unit: 100000, quantity: 1, discount: 0, product_uom_id: [4, 'Hours'] }
     },
     invoices: {
       // 1 & 2: Single vs Multi lines
@@ -222,6 +222,7 @@ describe('4. 17 Skenario Uji Persyaratan Sistem (End-to-End Service Tests)', () 
     assert.ok(res.xml);
     assert.strictEqual(res.filename, 'INV_2026_0001.xml');
     assert.strictEqual(res.xml.match(/<GoodService>/g).length, 1);
+    assert.ok(res.xml.includes('<Unit>Pcs</Unit>'));
   });
 
   it('Test Case 2: Invoice beberapa baris produk (3 baris)', async () => {
@@ -245,6 +246,8 @@ describe('4. 17 Skenario Uji Persyaratan Sistem (End-to-End Service Tests)', () 
     const res = await service.exportInvoiceToXml(5);
     assert.ok(res.xml.includes('<BuyerDocument>TIN</BuyerDocument>'));
     assert.ok(res.xml.includes('<BuyerTin>0012345678901000</BuyerTin>'));
+    assert.ok(res.xml.includes('<BuyerIDTKU>0012345678901000000000</BuyerIDTKU>'));
+    assert.ok(res.xml.includes('<SellerIDTKU>0080203342361700000000</SellerIDTKU>'));
   });
 
   it('Test Case 6: Invoice dengan data buyer tidak lengkap (menolak & pesan jelas)', async () => {

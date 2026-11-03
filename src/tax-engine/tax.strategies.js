@@ -31,11 +31,14 @@ export function calculateCoretaxOfficial(line, config = {}) {
   // TaxBase = Gross - TotalDiscount
   const taxBase = gross.minus(totalDiscount).toDecimalPlaces(2);
 
-  // OtherTaxBase
-  const otherTaxBaseFactor = config.otherTaxBaseFactor ? new Decimal(config.otherTaxBaseFactor) : new Decimal(1);
+  // OtherTaxBase: dihitung dengan rumus 11/12 * TaxBase
+  const factor11_12 = new Decimal(11).dividedBy(12);
+  const otherTaxBaseFactor = config.otherTaxBaseFactor !== undefined 
+    ? new Decimal(config.otherTaxBaseFactor) 
+    : factor11_12;
   const otherTaxBase = taxBase.times(otherTaxBaseFactor).toDecimalPlaces(2);
 
-  // VATRate: default 12% (UU HPP) atau 11% sesuai konfigurasi
+  // VATRate: default 12% (UU HPP) atau sesuai konfigurasi
   const vatRate = new Decimal(config.vatRate !== undefined ? config.vatRate : 12);
   const vat = otherTaxBase.times(vatRate).dividedBy(100).toDecimalPlaces(2);
 

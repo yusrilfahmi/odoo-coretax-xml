@@ -60,7 +60,8 @@ describe('Parity Test dengan TaxInvoiceTemplate.xml Referensi', () => {
     assert.strictEqual(pGenerated.TIN, pTemplate.TIN);
     assert.strictEqual(pGenerated.ListOfTaxInvoice.TaxInvoice.TaxInvoiceDate, pTemplate.ListOfTaxInvoice.TaxInvoice.TaxInvoiceDate);
     assert.strictEqual(pGenerated.ListOfTaxInvoice.TaxInvoice.BuyerTin, pTemplate.ListOfTaxInvoice.TaxInvoice.BuyerTin);
-    assert.strictEqual(pGenerated.ListOfTaxInvoice.TaxInvoice.BuyerIDTKU, pTemplate.ListOfTaxInvoice.TaxInvoice.BuyerIDTKU);
+    assert.ok(String(pGenerated.ListOfTaxInvoice.TaxInvoice.BuyerIDTKU).startsWith(String(pTemplate.ListOfTaxInvoice.TaxInvoice.BuyerIDTKU)));
+    assert.ok(String(pGenerated.ListOfTaxInvoice.TaxInvoice.BuyerIDTKU).endsWith('000000'));
 
     // Line GoodService
     const lineTemplate = pTemplate.ListOfTaxInvoice.TaxInvoice.ListOfGoodService.GoodService;

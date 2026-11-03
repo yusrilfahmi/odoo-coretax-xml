@@ -113,16 +113,24 @@ export function resolveCountryCode(country) {
 }
 
 /**
- * Menghasilkan BuyerIDTKU (16 digit) sesuai ketentuan Coretax.
- * Mengikuti NPWP 16 digit atau default IDTKU.
+ * Menghasilkan IDTKU (22 digit) sesuai ketentuan Coretax: 16 digit NPWP + 6 angka '0' di belakangnya.
  * @param {string} tin16
  * @param {string} customTku
  * @returns {string}
  */
 export function resolveIDTKU(tin16, customTku = '') {
-  if (customTku && cleanIdNumber(customTku).length >= 16) {
-    return cleanIdNumber(customTku);
+  const cleanedCustom = cleanIdNumber(customTku);
+  if (cleanedCustom && cleanedCustom.length === 22) {
+    return cleanedCustom;
   }
-  return tin16 || '0000000000000000';
+  const base = normalizeNpwp16(tin16) || '0000000000000000';
+  // Selalu tambahkan 6 angka '0' di belakang NPWP 16 digit untuk membentuk IDTKU 22 digit
+  if (base.length === 16) {
+    return base + '000000';
+  }
+  if (base.length < 22) {
+    return base.padEnd(22, '0');
+  }
+  return base;
 }
 

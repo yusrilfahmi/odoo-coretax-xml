@@ -88,7 +88,7 @@ export class CoretaxXmlGenerator {
       <CustomDoc />
 ${renderTag('RefDesc', refDesc)}
       <FacilityStamp />
-      <SellerIDTKU>${escapeXml(sellerIdTku || sellerTin)}</SellerIDTKU>
+      <SellerIDTKU>${escapeXml(sellerIdTku ? (sellerIdTku.length === 16 ? sellerIdTku + '000000' : sellerIdTku) : (sellerTin ? sellerTin + '000000' : '0000000000000000000000'))}</SellerIDTKU>
       <BuyerTin>${escapeXml(buyerTin)}</BuyerTin>
       <BuyerDocument>${escapeXml(buyerDocument)}</BuyerDocument>
       <BuyerCountry>${escapeXml(buyerCountry)}</BuyerCountry>
@@ -96,7 +96,7 @@ ${renderTag('BuyerDocumentNumber', buyerDocumentNumber)}
 ${renderTag('BuyerName', buyerName)}
 ${renderTag('BuyerAdress', buyerAddress)}
 ${renderTag('BuyerEmail', buyerEmail)}
-      <BuyerIDTKU>${escapeXml(buyerIdTku || buyerTin)}</BuyerIDTKU>
+      <BuyerIDTKU>${escapeXml(buyerIdTku ? (buyerIdTku.length === 16 ? buyerIdTku + '000000' : buyerIdTku) : (buyerTin ? buyerTin + '000000' : '0000000000000000000000'))}</BuyerIDTKU>
       <ListOfGoodService>
 ${goodServicesXml}
       </ListOfGoodService>

@@ -34,12 +34,24 @@ export class InvoiceExportMapper {
         opt = options.lineOpts[line.id];
       }
 
-      // Ambil nama unit jika ada
-      let unitName = 'Unit';
+      // Ambil nama unit persis sesuai yang ada di Odoo (misal: Units, Pcs, Box, kg, dsb.)
+      let unitName = '';
       if (Array.isArray(line.product_uom_id) && line.product_uom_id[1]) {
         unitName = line.product_uom_id[1];
-      } else if (typeof line.product_uom_id === 'string') {
-        unitName = line.product_uom_id;
+      } else if (typeof line.product_uom_id === 'string' && line.product_uom_id.trim()) {
+        unitName = line.product_uom_id.trim();
+      } else if (Array.isArray(line.product_uom) && line.product_uom[1]) {
+        unitName = line.product_uom[1];
+      } else if (typeof line.product_uom === 'string' && line.product_uom.trim()) {
+        unitName = line.product_uom.trim();
+      } else if (Array.isArray(line.uom_id) && line.uom_id[1]) {
+        unitName = line.uom_id[1];
+      } else if (line.uom_name) {
+        unitName = line.uom_name;
+      } else if (line.unit) {
+        unitName = line.unit;
+      } else {
+        unitName = 'Unit';
       }
 
       return {
