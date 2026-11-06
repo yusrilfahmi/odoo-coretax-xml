@@ -39,7 +39,7 @@ export class CoretaxXmlGenerator {
       const code = line.code || '000000';
       const name = line.name || 'odoo';
       // Unit: Jika kosong isi UM.0001, jika terisi ambil yang di Odoo
-      const unit = "UM.0001";
+      const unit = "UM.0018";
       const price = formatXmlNumber(line.price);
       const qty = formatXmlNumber(line.qty);
       const totalDiscount = formatXmlNumber(line.totalDiscount);
