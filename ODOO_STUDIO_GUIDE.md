@@ -74,15 +74,22 @@ action = {
 > [!NOTE]
 > Jika Odoo Online Anda membatasi modul `hmac` atau `hashlib` di safe_eval, Anda dapat menggunakan Opsi 2 di bawah ini.
 
-#### Opsi 2: Direct Download dengan API Secret Token
-Jika Anda ingin kode Python yang paling sederhana dan 100% kompatibel dengan safe_eval Odoo Online:
+#### Opsi 2: Direct Download dengan API Secret Token (Mendukung Single & Multiple / Bulk)
+Jika Anda ingin kode Python yang paling sederhana, 100% kompatibel dengan safe_eval Odoo Online, dan **mendukung export multiple invoices sekaligus dari list view**:
 
 ```python
-# Server Action: Direct Download URL
-BASE_BACKEND_URL = "https://backend-anda.com"
-API_SECRET = "your_super_secret_hmac_key_here"
+# Server Action: Direct Download XML (Single & Multiple/Bulk)
+# Model: account.move / Journal Entry
+BASE_BACKEND_URL = "https://odoo-coretax-xml.vercel.app"
+API_SECRET = "secret_coretax_hanifa_2026"
 
-download_url = f"{BASE_BACKEND_URL}/api/invoices/{record.id}/xml?token={API_SECRET}"
+# Ambil semua ID invoice yang dipilih
+if records:
+    ids_str = ",".join(str(r.id) for r in records)
+else:
+    ids_str = str(record.id)
+
+download_url = f"{BASE_BACKEND_URL}/api/invoices/bulk/xml?ids={ids_str}&token={API_SECRET}"
 
 action = {
     'type': 'ir.actions.act_url',
@@ -90,6 +97,23 @@ action = {
     'target': 'self',
 }
 ```
+
+---
+
+## 4. Konfigurasi Tombol di List View (Dashboard Invoices Multiple Select)
+
+Untuk menambahkan tombol **`Convert to XML`** di dashboard list view seperti pada screenshot Anda:
+
+1. Buka menu **Invoicing > Customers > Invoices** (tampilan daftar / tabel).
+2. Aktifkan **Odoo Studio** (ikon di pojok kanan atas).
+3. Buat Server Action baru (atau update Server Action yang sudah ada):
+   - **Action Name**: `Convert to XML`
+   - **Model**: `Invoice` (`account.move`)
+   - **Action To Do**: `Execute Code`
+   - **Python Code**: Masukkan kode Python Opsi 2 di atas.
+4. Klik tombol **`Create Contextual Action`** di kiri atas halaman Server Action (agar aksi ini muncul di menu `Actions` saat beberapa baris dipilih).
+5. Atau hubungkan langsung ke tombol header list view **`Convert to XML`**.
+6. Selesai! Saat Anda mencentang 4 invoice (misal: INV 18, 19, 20, 21) lalu klik **Convert to XML**, sistem akan mengunduh 1 file XML Coretax (`TaxInvoiceBulk_4_Invoices_YYYY-MM-DD.xml`) yang memuat seluruh invoice tersebut di dalam tag `<ListOfTaxInvoice>`.
 
 ---
 

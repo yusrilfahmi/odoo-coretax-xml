@@ -2,17 +2,16 @@ import { escapeXml, formatXmlDate, formatXmlNumber } from '../utils/xml.utils.js
 
 /**
  * Generator XML Coretax TaxInvoiceBulk sesuai spesifikasi TaxInvoice.xsd
+ * Mendukung ekspor single invoice maupun multiple invoices (bulk).
  */
 export class CoretaxXmlGenerator {
   /**
-   * Menghasilkan string XML Coretax dari object invoice yang sudah ternormalisasi dan terhitung
+   * Helper untuk merender satu blok elemen <TaxInvoice>...</TaxInvoice>
    * @param {object} invoiceData
    * @returns {string}
    */
-  static generate(invoiceData) {
-    if (!invoiceData) {
-      throw new Error('INVALID_INVOICE_DATA: Data invoice tidak boleh kosong.');
-    }
+  static renderSingleTaxInvoice(invoiceData) {
+    if (!invoiceData) return '';
 
     const {
       sellerTin = '',
@@ -39,7 +38,8 @@ export class CoretaxXmlGenerator {
       const opt = line.opt || 'A';
       const code = line.code || '000000';
       const name = line.name || 'odoo';
-      const unit = line.unit || 'Unit';
+      // Unit: Jika kosong isi UM.0001, jika terisi ambil yang di Odoo
+      const unit = (line.unit && String(line.unit).trim()) ? String(line.unit).trim() : 'UM.0001';
       const price = formatXmlNumber(line.price);
       const qty = formatXmlNumber(line.qty);
       const totalDiscount = formatXmlNumber(line.totalDiscount);
@@ -75,12 +75,15 @@ export class CoretaxXmlGenerator {
       return `${indent}<${tagName}>${escapeXml(value)}</${tagName}>`;
     };
 
-    // Struktur XML persis seperti TaxInvoiceTemplate.xml
-    return `<?xml version="1.0" encoding="UTF-8"?>
-<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd">
-  <TIN>${escapeXml(sellerTin)}</TIN>
-  <ListOfTaxInvoice>
-    <TaxInvoice>
+    const finalSellerIdTku = sellerIdTku
+      ? (sellerIdTku.length === 16 ? sellerIdTku + '000000' : sellerIdTku)
+      : (sellerTin ? sellerTin + '000000' : '0000000000000000000000');
+
+    const finalBuyerIdTku = buyerIdTku
+      ? (buyerIdTku.length === 16 ? buyerIdTku + '000000' : buyerIdTku)
+      : (buyerTin ? buyerTin + '000000' : '0000000000000000000000');
+
+    return `    <TaxInvoice>
       <TaxInvoiceDate>${formattedDate}</TaxInvoiceDate>
       <TaxInvoiceOpt>${escapeXml(invoiceOpt)}</TaxInvoiceOpt>
       <TrxCode>${escapeXml(trxCode)}</TrxCode>
@@ -88,7 +91,7 @@ export class CoretaxXmlGenerator {
       <CustomDoc />
 ${renderTag('RefDesc', refDesc)}
       <FacilityStamp />
-      <SellerIDTKU>${escapeXml(sellerIdTku ? (sellerIdTku.length === 16 ? sellerIdTku + '000000' : sellerIdTku) : (sellerTin ? sellerTin + '000000' : '0000000000000000000000'))}</SellerIDTKU>
+      <SellerIDTKU>${escapeXml(finalSellerIdTku)}</SellerIDTKU>
       <BuyerTin>${escapeXml(buyerTin)}</BuyerTin>
       <BuyerDocument>${escapeXml(buyerDocument)}</BuyerDocument>
       <BuyerCountry>${escapeXml(buyerCountry)}</BuyerCountry>
@@ -96,13 +99,37 @@ ${renderTag('BuyerDocumentNumber', buyerDocumentNumber)}
 ${renderTag('BuyerName', buyerName)}
 ${renderTag('BuyerAdress', buyerAddress)}
 ${renderTag('BuyerEmail', buyerEmail)}
-      <BuyerIDTKU>${escapeXml(buyerIdTku ? (buyerIdTku.length === 16 ? buyerIdTku + '000000' : buyerIdTku) : (buyerTin ? buyerTin + '000000' : '0000000000000000000000'))}</BuyerIDTKU>
+      <BuyerIDTKU>${escapeXml(finalBuyerIdTku)}</BuyerIDTKU>
       <ListOfGoodService>
 ${goodServicesXml}
       </ListOfGoodService>
-    </TaxInvoice>
+    </TaxInvoice>`;
+  }
+
+  /**
+   * Menghasilkan string XML Coretax dari object invoice atau array of invoices
+   * @param {object|Array<object>} invoiceDataOrArray
+   * @returns {string}
+   */
+  static generate(invoiceDataOrArray) {
+    if (!invoiceDataOrArray) {
+      throw new Error('INVALID_INVOICE_DATA: Data invoice tidak boleh kosong.');
+    }
+
+    const invoices = Array.isArray(invoiceDataOrArray) ? invoiceDataOrArray : [invoiceDataOrArray];
+    if (invoices.length === 0) {
+      throw new Error('INVALID_INVOICE_DATA: Minimal satu invoice harus disertakan.');
+    }
+
+    const sellerTin = invoices[0].sellerTin || '';
+    const taxInvoicesXml = invoices.map(inv => CoretaxXmlGenerator.renderSingleTaxInvoice(inv)).join('\n');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<TaxInvoiceBulk xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="TaxInvoice.xsd">
+  <TIN>${escapeXml(sellerTin)}</TIN>
+  <ListOfTaxInvoice>
+${taxInvoicesXml}
   </ListOfTaxInvoice>
 </TaxInvoiceBulk>`;
   }
 }
-

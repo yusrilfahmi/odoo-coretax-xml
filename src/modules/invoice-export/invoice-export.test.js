@@ -363,4 +363,57 @@ describe('4. 17 Skenario Uji Persyaratan Sistem (End-to-End Service Tests)', () 
       appConfig.requireTokenAuth = originalRequireAuth;
     }
   });
+
+  it('Test Case 18: Fallback Unit ke UM.0001 apabila unit di Odoo kosong', async () => {
+    // Invoice 10 memiliki line 104 tanpa product_uom_id
+    const res = await service.exportInvoiceToXml(10);
+    assert.ok(res.xml.includes('<Unit>UM.0001</Unit>'));
+  });
+
+  it('Test Case 19: Ekspor Multiple Invoices (Bulk Export) ke 1 file TaxInvoiceBulk XML', async () => {
+    const resBulk = await service.exportBulkInvoicesToXml([1, 2, 3]);
+    assert.ok(resBulk.xml);
+    assert.strictEqual(resBulk.count, 3);
+    assert.ok(resBulk.filename.startsWith('TaxInvoiceBulk_3_Invoices_'));
+    
+    // Periksa bahwa terdapat persis 3 blok <TaxInvoice>
+    const matches = resBulk.xml.match(/<TaxInvoice>/g);
+    assert.strictEqual(matches ? matches.length : 0, 3);
+
+    // Validasi skema XML bulk
+    const validation = CoretaxXmlValidator.validate(resBulk.xml);
+    assert.strictEqual(validation.isValid, true);
+    assert.strictEqual(validation.errors.length, 0);
+  });
+
+  it('Test Case 20: Ekspor Bulk gagal secara informatif jika salah satu invoice invalid', async () => {
+    // Invoice 6 memiliki data buyer invalid (nama kosong)
+    await assert.rejects(
+      async () => service.exportBulkInvoicesToXml([1, 6]),
+      err => {
+        assert.ok(err.message.includes('Beberapa invoice tidak valid'));
+        assert.ok(err.details.some(d => d.includes('BUYER_NAME_MISSING')));
+        return true;
+      }
+    );
+  });
+
+  it('Test Case 21: Endpoint Controller exportBulkXml menangani multiple IDs via query param', async () => {
+    const { InvoiceExportController } = await import('./invoice-export.controller.js');
+    const controller = new InvoiceExportController(service);
+
+    let statusResult = 0;
+    let headersResult = {};
+    let sentBody = '';
+    const mockRes = {
+      status: (s) => { statusResult = s; return mockRes; },
+      setHeader: (k, v) => { headersResult[k] = v; },
+      send: (b) => { sentBody = b; return mockRes; }
+    };
+
+    await controller.exportBulkXml({ query: { ids: '1,2,3', token: appConfig.securitySecret } }, mockRes);
+    assert.strictEqual(statusResult, 200);
+    assert.ok(headersResult['Content-Disposition'].includes('TaxInvoiceBulk_3_Invoices_'));
+    assert.strictEqual(sentBody.match(/<TaxInvoice>/g).length, 3);
+  });
 });

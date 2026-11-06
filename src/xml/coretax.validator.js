@@ -53,39 +53,43 @@ export class CoretaxXmlValidator {
       return { isValid: false, errors, parsed };
     }
 
-    const invoice = Array.isArray(taxInvoiceList) ? taxInvoiceList[0] : taxInvoiceList;
+    const invoices = Array.isArray(taxInvoiceList) ? taxInvoiceList : [taxInvoiceList];
 
-    // Validasi field header
-    if (!invoice.TaxInvoiceDate) errors.push('Tag <TaxInvoiceDate> wajib ada.');
-    if (!invoice.TaxInvoiceOpt) errors.push('Tag <TaxInvoiceOpt> wajib ada.');
-    if (!invoice.TrxCode) errors.push('Tag <TrxCode> wajib ada.');
-    if (!invoice.SellerIDTKU) errors.push('Tag <SellerIDTKU> wajib ada.');
+    invoices.forEach((invoice, invIdx) => {
+      const invPrefix = invoices.length > 1 ? `Invoice #${invIdx + 1}: ` : '';
 
-    // Validasi Buyer
-    if (invoice.BuyerTin === undefined) errors.push('Tag <BuyerTin> wajib ada.');
-    if (!invoice.BuyerDocument) errors.push('Tag <BuyerDocument> wajib ada.');
-    if (!invoice.BuyerCountry) errors.push('Tag <BuyerCountry> wajib ada.');
-    if (invoice.BuyerIDTKU === undefined) errors.push('Tag <BuyerIDTKU> wajib ada.');
+      // Validasi field header
+      if (!invoice.TaxInvoiceDate) errors.push(`${invPrefix}Tag <TaxInvoiceDate> wajib ada.`);
+      if (!invoice.TaxInvoiceOpt) errors.push(`${invPrefix}Tag <TaxInvoiceOpt> wajib ada.`);
+      if (!invoice.TrxCode) errors.push(`${invPrefix}Tag <TrxCode> wajib ada.`);
+      if (!invoice.SellerIDTKU) errors.push(`${invPrefix}Tag <SellerIDTKU> wajib ada.`);
 
-    // Validasi Ejaan BuyerAdress (pastikan bukan BuyerAddress)
-    if (invoice.BuyerAddress !== undefined) {
-      errors.push('Ditemukan tag <BuyerAddress>. Ejaan wajib Coretax adalah <BuyerAdress> (1 huruf d).');
-    }
+      // Validasi Buyer
+      if (invoice.BuyerTin === undefined) errors.push(`${invPrefix}Tag <BuyerTin> wajib ada.`);
+      if (!invoice.BuyerDocument) errors.push(`${invPrefix}Tag <BuyerDocument> wajib ada.`);
+      if (!invoice.BuyerCountry) errors.push(`${invPrefix}Tag <BuyerCountry> wajib ada.`);
+      if (invoice.BuyerIDTKU === undefined) errors.push(`${invPrefix}Tag <BuyerIDTKU> wajib ada.`);
 
-    // Validasi GoodService
-    const goodsServices = invoice.ListOfGoodService?.GoodService;
-    if (!goodsServices) {
-      errors.push('Tag <ListOfGoodService> harus memiliki minimal 1 <GoodService>.');
-    } else {
-      const items = Array.isArray(goodsServices) ? goodsServices : [goodsServices];
-      items.forEach((item, index) => {
-        if (!item.Opt) errors.push(`GoodService #${index + 1}: Tag <Opt> wajib ada.`);
-        if (item.Price === undefined) errors.push(`GoodService #${index + 1}: Tag <Price> wajib ada.`);
-        if (item.Qty === undefined) errors.push(`GoodService #${index + 1}: Tag <Qty> wajib ada.`);
-        if (item.TaxBase === undefined) errors.push(`GoodService #${index + 1}: Tag <TaxBase> wajib ada.`);
-        if (item.VAT === undefined) errors.push(`GoodService #${index + 1}: Tag <VAT> wajib ada.`);
-      });
-    }
+      // Validasi Ejaan BuyerAdress (pastikan bukan BuyerAddress)
+      if (invoice.BuyerAddress !== undefined) {
+        errors.push(`${invPrefix}Ditemukan tag <BuyerAddress>. Ejaan wajib Coretax adalah <BuyerAdress> (1 huruf d).`);
+      }
+
+      // Validasi GoodService
+      const goodsServices = invoice.ListOfGoodService?.GoodService;
+      if (!goodsServices) {
+        errors.push(`${invPrefix}Tag <ListOfGoodService> harus memiliki minimal 1 <GoodService>.`);
+      } else {
+        const items = Array.isArray(goodsServices) ? goodsServices : [goodsServices];
+        items.forEach((item, index) => {
+          if (!item.Opt) errors.push(`${invPrefix}GoodService #${index + 1}: Tag <Opt> wajib ada.`);
+          if (item.Price === undefined) errors.push(`${invPrefix}GoodService #${index + 1}: Tag <Price> wajib ada.`);
+          if (item.Qty === undefined) errors.push(`${invPrefix}GoodService #${index + 1}: Tag <Qty> wajib ada.`);
+          if (item.TaxBase === undefined) errors.push(`${invPrefix}GoodService #${index + 1}: Tag <TaxBase> wajib ada.`);
+          if (item.VAT === undefined) errors.push(`${invPrefix}GoodService #${index + 1}: Tag <VAT> wajib ada.`);
+        });
+      }
+    });
 
     return {
       isValid: errors.length === 0,

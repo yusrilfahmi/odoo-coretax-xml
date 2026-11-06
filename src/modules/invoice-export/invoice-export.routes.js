@@ -8,7 +8,11 @@ import { Router } from 'express';
 export function createInvoiceExportRoutes(controller) {
   const router = Router();
 
-  // Endpoint download langsung XML
+  // Endpoint download XML multiple invoices (bulk)
+  router.get('/invoices/bulk/xml', controller.exportBulkXml);
+  router.post('/invoices/bulk/xml', controller.exportBulkXml);
+
+  // Endpoint download langsung XML satu invoice
   router.get('/invoices/:invoiceId/xml', controller.exportXml);
 
   // Endpoint untuk generate URL download bertoken aman (opsional jika dibutuhkan server action)
@@ -16,4 +20,3 @@ export function createInvoiceExportRoutes(controller) {
 
   return router;
 }
-

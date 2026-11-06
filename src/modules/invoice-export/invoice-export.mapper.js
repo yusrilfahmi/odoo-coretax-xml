@@ -50,8 +50,11 @@ export class InvoiceExportMapper {
         unitName = line.uom_name;
       } else if (line.unit) {
         unitName = line.unit;
-      } else {
-        unitName = 'Unit';
+      }
+
+      // Apabila isinya kosong di Odoo maka default ke UM.0001, jika terisi ambil dari Odoo
+      if (!unitName || !unitName.trim()) {
+        unitName = 'UM.0001';
       }
 
       return {
